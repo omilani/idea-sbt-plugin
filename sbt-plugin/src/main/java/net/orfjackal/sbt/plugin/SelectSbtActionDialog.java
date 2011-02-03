@@ -12,7 +12,10 @@ import javax.swing.*;
 
 public class SelectSbtActionDialog extends DialogWrapper {
 
+    public static final String WAIT_BACKGROUND = "(wait for ~)";
+
     private static final String[] SBT_ACTIONS = new String[]{
+            WAIT_BACKGROUND,
             "clean",
             "clean-cache",
             "clean-lib",

@@ -18,15 +18,19 @@ public class SbtSettingsForm {
     private final JCheckBox useSbtOutputDirs;
     private final JTextField sbtLauncherJarPath;
     private final JTextField vmParameters;
+    private JCheckBox focusOnError;
 
     public SbtSettingsForm() {
         useSbtOutputDirs = new JCheckBox();
+        focusOnError = new JCheckBox();
         sbtLauncherJarPath = new JTextField();
         vmParameters = new JTextField();
 
         JPanel projectSettings = new JPanel(new MigLayout());
         projectSettings.setBorder(BorderFactory.createTitledBorder("Project Settings"));
         {
+            focusOnError.setText("Show compiler tab on error");
+
             useSbtOutputDirs.setText("Use SBT output directories *");
             useSbtOutputDirs.setMnemonic('O');
 
@@ -36,6 +40,7 @@ public class SbtSettingsForm {
                     "because otherwise it might conflict with this setting." +
                     "</html>");
 
+            projectSettings.add(focusOnError, "wrap");
             projectSettings.add(useSbtOutputDirs, "wrap");
             projectSettings.add(hintText, "gapbefore 20, width 400, wrap");
         }
@@ -108,11 +113,13 @@ public class SbtSettingsForm {
 
     public void copyTo(SbtProjectSettings projectSettings, SbtApplicationSettings applicationSettings) {
         projectSettings.setUseSbtOutputDirs(useSbtOutputDirs.isSelected());
+        projectSettings.setFocusOnError(focusOnError.isSelected());
         applicationSettings.setSbtLauncherJarPath(sbtLauncherJarPath.getText());
         applicationSettings.setSbtLauncherVmParameters(vmParameters.getText());
     }
 
     public void copyFrom(SbtProjectSettings projectSettings, SbtApplicationSettings applicationSettings) {
+        focusOnError.setSelected(projectSettings.isFocusOnError());
         useSbtOutputDirs.setSelected(projectSettings.isUseSbtOutputDirs());
         sbtLauncherJarPath.setText(new File(applicationSettings.getSbtLauncherJarPath()).getAbsolutePath());
         vmParameters.setText(applicationSettings.getSbtLauncherVmParameters());

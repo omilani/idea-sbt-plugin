@@ -7,6 +7,7 @@ package net.orfjackal.sbt.plugin;
 import com.intellij.execution.filters.*;
 import com.intellij.execution.process.*;
 import com.intellij.execution.ui.ConsoleView;
+import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -15,6 +16,10 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.*;
 import com.intellij.openapi.wm.*;
 import com.intellij.ui.content.*;
+import net.orfjackal.sbt.runner.StatusError;
+import net.orfjackal.sbt.runner.StatusListener;
+import net.orfjackal.sbt.runner.StatusOfCompile;
+import net.orfjackal.sbt.runner.StatusReader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,17 +39,24 @@ public class SbtConsole {
     private final String title;
     private final Project project;
     private final ConsoleView consoleView;
+    private final ConsoleView compileView;
     private final AtomicBoolean isOpen = new AtomicBoolean(false);
     private final SbtRunnerComponent runnerComponent;
     private boolean finished = false;
+    private Content compileContent;
+
 
     public SbtConsole(String title, Project project, SbtRunnerComponent runnerComponent) {
         this.title = title;
         this.project = project;
         this.consoleView = createConsoleView(project);
+        this.compileView = createCompileView(project);
         this.runnerComponent = runnerComponent;
     }
 
+    private static ConsoleView createCompileView(Project project) {
+        return TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+    }
     private static ConsoleView createConsoleView(Project project) {
         return createConsoleBuilder(project).getConsole();
     }
@@ -102,10 +114,13 @@ public class SbtConsole {
         toolWindowPanel.setToolbar(createToolbar());
         toolWindowPanel.setContent(consoleView.getComponent());
         Content content = ContentFactory.SERVICE.getInstance().createContent(toolWindowPanel, title, true);
+        compileContent = ContentFactory.SERVICE.getInstance().createContent(compileView.getComponent(), "Compile", true);
         content.putUserData(CONSOLE_KEY, SbtConsole.this);
+        compileContent.putUserData(CONSOLE_KEY, SbtConsole.this);
 
         window.getContentManager().addContent(content);
         window.getContentManager().setSelectedContent(content);
+        window.getContentManager().addContent(compileContent);
 
         removeUnusedTabs(window, content);
 
@@ -163,6 +178,40 @@ public class SbtConsole {
             if (console.isFinished()) {
                 window.getContentManager().removeContent(each, false);
             }
+        }
+    }
+
+    public void attachToCompile(StatusReader status, final boolean focusOnError) {
+        status.setStatusListener(new StatusListener() {
+            public void update(StatusOfCompile status) {
+                compileView.clear();
+                if (status.isSuccess())
+                    compileView.print("Compile Successful\n", ConsoleViewContentType.NORMAL_OUTPUT);
+                else {
+                    if (focusOnError)
+                        forceCompileFocus();
+                    compileView.print("Compile Failed\n", ConsoleViewContentType.ERROR_OUTPUT);
+                }
+                for (StatusError error : status.getErrors())
+                    error.print(project, compileView);
+            }
+        });
+    }
+
+    private void forceCompileFocus() {
+        try {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    final ToolWindow window = ToolWindowManager.getInstance(project).getToolWindow(MessageBundle.message("sbt.console.id"));
+                    if (!window.isActive())
+                        window.activate(null, false);
+                    if (window.getContentManager().getSelectedContent() != compileContent)
+                        window.getContentManager().setSelectedContent(compileContent);
+//                    compileView.getComponent().requestFocusInWindow();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -147,6 +147,7 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
         // org.jetbrains.idea.maven.execution.MavenExecutor#myConsole
         SbtProcessHandler process = new SbtProcessHandler(this, sbt.subscribeToOutput());
         console.attachToProcess(process, this);
+        console.attachToCompile(sbt.getStatus(), projectSettings.getState().isFocusOnError());
         process.startNotify();
     }
 
@@ -255,5 +256,10 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
             sbt.destroy();
             sbt = null;
         }
+    }
+
+    public boolean waitForBackground() {
+        sbt.getStatus().waitIfWorking();
+        return true;
     }
 }

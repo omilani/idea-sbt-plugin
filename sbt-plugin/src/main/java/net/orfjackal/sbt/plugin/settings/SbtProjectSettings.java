@@ -9,6 +9,15 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 public class SbtProjectSettings {
 
     private boolean useSbtOutputDirs = true;
+    private boolean focusOnError;
+
+    public boolean isFocusOnError() {
+        return focusOnError;
+    }
+
+    public void setFocusOnError(boolean focusOnError) {
+        this.focusOnError = focusOnError;
+    }
 
     public boolean isUseSbtOutputDirs() {
         return useSbtOutputDirs;

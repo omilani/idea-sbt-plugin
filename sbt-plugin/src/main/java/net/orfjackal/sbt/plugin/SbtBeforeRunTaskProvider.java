@@ -59,7 +59,9 @@ public class SbtBeforeRunTaskProvider extends BeforeRunTaskProvider<SbtBeforeRun
             return false;
         }
 
-        try {
+        if (task.getAction().equals(SelectSbtActionDialog.WAIT_BACKGROUND))
+            return SbtRunnerComponent.getInstance(project).waitForBackground();
+        else try {
             return SbtRunnerComponent.getInstance(project)
                     .executeInBackground(action)
                     .waitForResult();
