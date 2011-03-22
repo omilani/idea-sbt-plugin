@@ -4,14 +4,14 @@
 
 package net.orfjackal.sbt.runner;
 
-import com.intellij.execution.filters.OpenFileHyperlinkInfo;
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.execution.filters.*;
+import com.intellij.execution.ui.*;
+import com.intellij.openapi.project.*;
+import com.intellij.openapi.vfs.*;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,9 +24,10 @@ public class StatusError {
 
     private boolean warning;
     private String file, message;
+    private List<String> info = new ArrayList<String>();
     private int lineNo;
 
-    public StatusError(Pattern pattern, String line) {
+    public StatusError(Pattern pattern, String line, BufferedReader reader) {
         this.warning = line.contains("warning");
         Matcher match = pattern.matcher(line);
         if (!match.matches())
@@ -35,8 +36,16 @@ public class StatusError {
         message = match.group(3);
         // sbt output no starts from 1
         lineNo = Integer.parseInt(match.group(2)) - 1;
+        for (int i = 0; i < 5; i++) try {
+            line = reader.readLine();
+            if (!line.startsWith(getBeginning())) return;
+            info.add(line.substring(getBeginning().length()));
+        } catch (Exception e) { return; }
     }
 
+    protected String getBeginning() {
+        return "[error] ";
+    }
     public boolean isWarning() {
         return warning;
     }
@@ -63,5 +72,7 @@ public class StatusError {
             view.print("[error] ", ConsoleViewContentType.ERROR_OUTPUT);
         view.printHyperlink(relative, link);
         view.print("\t" + message + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+        for (String line : info) view.print("\t" + line + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+
     }
 }

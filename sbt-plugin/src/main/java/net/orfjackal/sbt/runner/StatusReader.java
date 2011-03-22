@@ -55,7 +55,7 @@ public class StatusReader implements Runnable {
             else if (line.endsWith(WAITING))
                 finished(StatusReader.Status.finished);
             else try {
-                current.addErrorInSource(new StatusError(errorPattern, line));
+                current.addErrorInSource(new StatusError(errorPattern, line, output));
             } catch (IllegalArgumentException e) { }
             synchronized (this) { notify(); }
         } } catch (IOException ioe) {

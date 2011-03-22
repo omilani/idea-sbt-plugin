@@ -27,13 +27,13 @@ public class StatusReaderTest {
         String projectDir = "D:\\work\\workspace-0.9\\smp-parent";
         Pattern errorPattern = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
         String str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.";
-        StatusError error = new StatusError(errorPattern, str);
+        StatusError error = new StatusError(errorPattern, str, null);
         assertFalse(error.isWarning());
         assertEquals("')' expected but '}' found.", error.getMessage());
         assertEquals(53, error.getLineNo());
         assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", error.getFile());
         str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-wicket\\src\\main\\java\\ir\\smp\\addon\\wicket\\StateList.java:33: warning: non-varargs call of varargs method with inexact argument type for last parameter;";
-        error = new StatusError(errorPattern, str);
+        error = new StatusError(errorPattern, str, null);
         assertTrue(error.isWarning());
 
 
