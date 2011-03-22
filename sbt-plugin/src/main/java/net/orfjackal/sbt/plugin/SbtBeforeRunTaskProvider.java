@@ -59,12 +59,13 @@ public class SbtBeforeRunTaskProvider extends BeforeRunTaskProvider<SbtBeforeRun
             return false;
         }
 
-        if (task.getAction().equals(SelectSbtActionDialog.WAIT_BACKGROUND))
-            return SbtRunnerComponent.getInstance(project).waitForBackground();
-        else try {
-            return SbtRunnerComponent.getInstance(project)
-                    .executeInBackground(action)
-                    .waitForResult();
+        try {
+            if (task.getAction().equals(SelectSbtActionDialog.WAIT_BACKGROUND))
+                return SbtRunnerComponent.getInstance(project).waitForBackground();
+            else
+                return SbtRunnerComponent.getInstance(project)
+                        .executeInBackground(action)
+                        .waitForResult();
         } catch (Exception e) {
             logger.error(e);
             return false;

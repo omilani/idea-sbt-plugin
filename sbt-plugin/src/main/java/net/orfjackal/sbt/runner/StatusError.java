@@ -33,7 +33,8 @@ public class StatusError {
            throw new IllegalArgumentException("not a valid SBT compile error line: " + line);
         file = match.group(1);
         message = match.group(3);
-        lineNo = Integer.parseInt(match.group(2));
+        // sbt output no starts from 1
+        lineNo = Integer.parseInt(match.group(2)) - 1;
     }
 
     public boolean isWarning() {

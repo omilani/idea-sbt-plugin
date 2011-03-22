@@ -89,7 +89,7 @@ public class SbtProcessHandler extends ProcessHandler {
         public void write(int b) {
             char ch = (char) b;
             if (ch == '\n') {
-                sbt.executeInBackground(buildCommand());
+                sbt.executeWithoutTask(buildCommand());
             } else {
                 commandBuffer.append(ch);
             }

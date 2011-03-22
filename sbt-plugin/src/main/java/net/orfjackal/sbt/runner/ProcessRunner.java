@@ -60,7 +60,7 @@ public class ProcessRunner {
         }
     }
 
-    public void writeInput(String s) throws IOException {
+    public synchronized void writeInput(String s) throws IOException {
         input.write(s);
         input.flush();
     }

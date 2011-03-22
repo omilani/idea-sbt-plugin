@@ -184,6 +184,10 @@ public class SbtConsole {
     public void attachToCompile(StatusReader status, final boolean focusOnError) {
         status.setStatusListener(new StatusListener() {
             public void update(StatusOfCompile status) {
+                // some other action has failed
+                if (!status.isSuccess() && status.getErrors().size() == 0)
+                    return;
+
                 compileView.clear();
                 if (status.isSuccess())
                     compileView.print("Compile Successful\n", ConsoleViewContentType.NORMAL_OUTPUT);

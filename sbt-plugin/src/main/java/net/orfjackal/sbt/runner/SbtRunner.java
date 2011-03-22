@@ -68,6 +68,9 @@ public class SbtRunner {
         return sbt.isAlive();
     }
 
+    public void executeAndForget(String action) throws IOException {
+        sbt.writeInput(action + "\n");
+    }
     public void execute(String action) throws IOException {
         OutputReader output = sbt.subscribeToOutput();
         sbt.writeInput(action + "\n");

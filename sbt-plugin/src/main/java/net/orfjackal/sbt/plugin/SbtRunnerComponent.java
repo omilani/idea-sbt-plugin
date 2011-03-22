@@ -42,11 +42,19 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
         console = new SbtConsole(MessageBundle.message("sbt.tasks.action"), project, this);
     }
 
+    public void executeWithoutTask(String action) {
+        try {
+            startIfNotStarted();
+            sbt.executeAndForget(action);
+        } catch (Exception e) {
+            logger.error("Failed to execute action \"" + action + "\". Maybe SBT failed to start?", e);
+        }
+    }
     public CompletionSignal executeInBackground(final String action) {
         final CompletionSignal signal = new CompletionSignal();
         signal.begin();
 
-        queue(new Task.Backgroundable(myProject, MessageBundle.message("sbt.tasks.executing"), false) {
+        queue(new Task.Backgroundable(myProject, MessageBundle.message("sbt.tasks.executing"), true) {
             public void run(ProgressIndicator indicator) {
                 try {
                     logger.info("Begin executing: " + action);
@@ -258,7 +266,8 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
         }
     }
 
-    public boolean waitForBackground() {
+    public boolean waitForBackground() throws IOException {
+        startIfNotStarted();
         sbt.getStatus().waitIfWorking();
         return true;
     }
