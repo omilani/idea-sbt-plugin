@@ -14,11 +14,7 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: omid
- * Date: 2/3/11
- * Time: 1:20 PM
- * To change this template use File | Settings | File Templates.
+ * TODO: detect tab length, now is assumed 4
  */
 public class StatusError {
 
@@ -27,7 +23,7 @@ public class StatusError {
     private boolean warning;
     private String file, message;
     private List<String> info = new ArrayList<String>();
-    private int lineNo;
+    private int lineNo, columnNo;
 
     public StatusError(Pattern pattern, String line, BufferedReader reader) {
         this.warning = line.contains("warning");
@@ -42,9 +38,18 @@ public class StatusError {
             line = reader.readLine();
             // this shouldn't happen but anyway
             if (!line.startsWith(getBeginning())) return;
-            info.add(line.substring(getBeginning().length()));
-            if (last_line.matcher(line).matches()) return;
-        } catch (Exception e) { return; }
+            if (last_line.matcher(line).matches()) {
+                columnNo = 0;
+                for (int charNo = getBeginning().length(); line.charAt(charNo) != '^'; charNo++)
+                    if (line.charAt(charNo) == '\t') do {
+                        columnNo++;
+                    } while (columnNo % getTabLength() != 0);
+                    else columnNo++;
+                info.remove(info.size() - 1);
+                return;
+            } else
+                info.add(line.substring(getBeginning().length()));
+       } catch (Exception e) { return; }
     }
 
     protected String getBeginning() {
@@ -69,7 +74,7 @@ public class StatusError {
     public void print(Project project, ConsoleView view) {
         VirtualFile file = project.getBaseDir().getFileSystem().findFileByPath(this.file);
         String relative = file.getPath().substring(project.getBaseDir().getPath().length());
-        OpenFileHyperlinkInfo link = new OpenFileHyperlinkInfo(project, file, lineNo);
+        OpenFileHyperlinkInfo link = new OpenFileHyperlinkInfo(project, file, lineNo, columnNo);
         if (warning)
             view.print("[warning] ", ConsoleViewContentType.NORMAL_OUTPUT);
         else
@@ -78,5 +83,9 @@ public class StatusError {
         view.print("\t" + message + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
         for (String line : info) view.print("\t" + line + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
 
+    }
+
+    public int getTabLength() {
+        return 4;
     }
 }
