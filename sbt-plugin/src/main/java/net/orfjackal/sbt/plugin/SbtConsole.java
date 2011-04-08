@@ -183,17 +183,12 @@ public class SbtConsole {
 
     public void attachToCompile(StatusReader status, final boolean focusOnError) {
         status.setStatusListener(new StatusListener() {
-            public void update(StatusOfCompile status) {
-                // some other action has failed
-                if (!status.isSuccess() && status.getErrors().size() == 0)
-                    return;
-
+            public synchronized void update(StatusOfCompile status) {
                 compileView.clear();
                 if (status.isSuccess())
                     compileView.print("Compile Successful\n", ConsoleViewContentType.NORMAL_OUTPUT);
                 else {
-                    if (focusOnError)
-                        forceCompileFocus();
+                    if (focusOnError) forceCompileFocus();
                     compileView.print("Compile Failed\n", ConsoleViewContentType.ERROR_OUTPUT);
                 }
                 for (StatusError error : status.getErrors())
@@ -207,11 +202,12 @@ public class SbtConsole {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     final ToolWindow window = ToolWindowManager.getInstance(project).getToolWindow(MessageBundle.message("sbt.console.id"));
-                    if (!window.isActive())
-                        window.activate(null, false);
-                    if (window.getContentManager().getSelectedContent() != compileContent)
-                        window.getContentManager().setSelectedContent(compileContent);
-//                    compileView.getComponent().requestFocusInWindow();
+                    if (!window.isActive()) {
+                            window.activate(null, false);
+                        if (window.getContentManager().getSelectedContent() != compileContent)
+                            window.getContentManager().setSelectedContent(compileContent);
+                        compileView.getComponent().requestFocusInWindow();
+                    }
                 }
             });
         } catch (Exception e) {

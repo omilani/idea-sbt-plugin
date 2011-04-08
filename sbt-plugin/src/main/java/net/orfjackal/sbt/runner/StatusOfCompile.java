@@ -15,19 +15,22 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class StatusOfCompile {
-    private boolean success;
+    // if null means in progress
+    private Boolean success;
     private List<StatusError> errors = new ArrayList<StatusError>();
 
     public void addErrorInSource(StatusError message) {
         errors.add(message);
     }
     public boolean isSuccess() {
-        return success;
+        return success != null && success;
     }
     public void setSuccess(boolean success) {
         this.success = success;
     }
-
+    public boolean isFinished() {
+        return success != null;
+    }
     public List<StatusError> getErrors() {
         return errors;
     }

@@ -24,46 +24,48 @@ public class StatusReaderTest {
 
     @Test
     public void simple() throws IOException {
+        PipedWriter writer = new PipedWriter();
         String projectDir = "D:\\work\\workspace-0.9\\smp-parent";
         Pattern errorPattern = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
-        String str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.";
+        StatusReader status = new StatusReader(new PipedReader(writer), "D:\\work\\workspace-0.9\\smp-parent");
+        String str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.";
+        assertTrue(status.error.matcher(str).matches());
         StatusError error = new StatusError(errorPattern, str, null);
         assertFalse(error.isWarning());
         assertEquals("')' expected but '}' found.", error.getMessage());
-        assertEquals(53, error.getLineNo());
-        assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", error.getFile());
+        assertEquals(52, error.getLineNo());
+        assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", error.getFile());
         str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-wicket\\src\\main\\java\\ir\\smp\\addon\\wicket\\StateList.java:33: warning: non-varargs call of varargs method with inexact argument type for last parameter;";
         error = new StatusError(errorPattern, str, null);
         assertTrue(error.isWarning());
+        assertTrue(StatusError.last_line.matcher("[error]   ^").matches());
 
 
-        PipedWriter writer = new PipedWriter();
-        StatusReader status = new StatusReader(new PipedReader(writer), "D:\\work\\workspace-0.9\\smp-parent") ;
         status.start();
         writer.write("> \n");
 //        status.waitIfWorking();
 //        assertEquals(StatusReader.Status.finished, status.getStatus());
         writer.write("4. Waiting for source changes... (press enter to interrupt)\n");
         try { Thread.sleep(1000); } catch (InterruptedException e) { }
-        status.waitIfWorking();
-        assertEquals(StatusReader.Status.finished, status.getStatus());
+        status.waitForWorking();
+        assertEquals(StatusReader.Status.wait_change, status.getStatus());
         writer.write("some working\n");
         writer.write("some more working\n");
         writer.write("still more working\n");
-        try { Thread.sleep(1500); } catch (InterruptedException e) { }
+        try { Thread.sleep(1000); } catch (InterruptedException e) { }
         assertEquals(StatusReader.Status.working, status.getStatus());
         writer.write("[info] Compiling test sources...\n");
-        writer.write("[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.\n");
+        writer.write("[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.\n");
         writer.write("[error]   }\n");
         writer.write("[error]   ^\n");
         writer.write("[error] one error found\n");
         writer.write("[info] == smp-chat / test-compile ==\n");
         writer.write("5. Waiting for source changes... (press enter to interrupt)\n");
-        status.waitIfWorking();
-        assertEquals(StatusReader.Status.finished, status.getStatus());
+        status.waitForWorking();
+        assertEquals(StatusReader.Status.wait_change, status.getStatus());
         assertFalse(status.getCompileStatus().isSuccess());
         assertFalse(status.getCompileStatus().getErrors().get(0).isWarning());
-        assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", status.getCompileStatus().getErrors().get(0).getFile());
+        assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", status.getCompileStatus().getErrors().get(0).getFile());
         assertEquals(1, status.getCompileStatus().getErrors().size());
 
         writer.write("[error] D:\\work\\workspace-0.9\\smp-parent\\smp-wicket\\src\\main\\java\\ir\\smp\\addon\\wicket\\StateList.java:33: warning: non-varargs call of varargs method with inexact argument type for last parameter;\n" +
@@ -77,8 +79,8 @@ public class StatusReaderTest {
                 "[success] Successful.\n");
         writer.write("5. Waiting for source changes... (press enter to interrupt)\n");
         try { Thread.sleep(1500); } catch (InterruptedException e) { }
-        status.waitIfWorking();
-        assertEquals(StatusReader.Status.finished, status.getStatus());
+        status.waitForWorking();
+        assertEquals(StatusReader.Status.wait_change, status.getStatus());
         assertEquals(1, status.getCompileStatus().getErrors().size());
         assertTrue(status.getCompileStatus().getErrors().get(0).isWarning());
         assertTrue(status.getCompileStatus().isSuccess());

@@ -266,9 +266,16 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
         }
     }
 
-    public boolean waitForBackground() throws IOException {
+    public boolean waitForBackground(String action) throws IOException {
         startIfNotStarted();
-        sbt.getStatus().waitIfWorking();
-        return true;
+        if (sbt.getStatus().getStatus() == StatusReader.Status.wait_input)
+            sbt.execute("~" + action);
+        sbt.getStatus().waitForWorking();
+        boolean success = sbt.getStatus().getCompileStatus().isSuccess();
+        return success;
+    }
+
+    public StatusOfCompile getResult() {
+        return sbt.getStatus().getCompileStatus();
     }
 }

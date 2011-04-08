@@ -42,7 +42,7 @@ public class SbtBeforeRunTaskProvider extends BeforeRunTaskProvider<SbtBeforeRun
     }
 
     public boolean configureTask(RunConfiguration runConfiguration, SbtBeforeRunTask task) {
-        SelectSbtActionDialog dialog = new SelectSbtActionDialog(project, task.getAction());
+        SelectSbtActionDialog dialog = new SelectSbtActionDialog(project, task.getAction(), task.isBackground());
 
         dialog.show();
         if (!dialog.isOK()) {
@@ -50,6 +50,7 @@ public class SbtBeforeRunTaskProvider extends BeforeRunTaskProvider<SbtBeforeRun
         }
 
         task.setAction(dialog.getSelectedAction());
+        task.setBackground(dialog.isSelectedBackground());
         return true;
     }
 
@@ -60,12 +61,14 @@ public class SbtBeforeRunTaskProvider extends BeforeRunTaskProvider<SbtBeforeRun
         }
 
         try {
-            if (task.getAction().equals(SelectSbtActionDialog.WAIT_BACKGROUND))
-                return SbtRunnerComponent.getInstance(project).waitForBackground();
-            else
-                return SbtRunnerComponent.getInstance(project)
+            if (task.isBackground())
+                return SbtRunnerComponent.getInstance(project).waitForBackground(action);
+            else {
+                SbtRunnerComponent.getInstance(project)
                         .executeInBackground(action)
                         .waitForResult();
+                return SbtRunnerComponent.getInstance(project).getResult().isSuccess();
+            }
         } catch (Exception e) {
             logger.error(e);
             return false;

@@ -10,6 +10,7 @@ import org.jdom.Element;
 public class SbtBeforeRunTask extends BeforeRunTask {
 
     private String action;
+    private boolean background;
 
     public String getAction() {
         return action;
@@ -19,9 +20,18 @@ public class SbtBeforeRunTask extends BeforeRunTask {
         this.action = action;
     }
 
+    public boolean isBackground() {
+        return background;
+    }
+
+    public void setBackground(boolean background) {
+        this.background = background;
+    }
+
     @Override
     public void writeExternal(Element element) {
         super.writeExternal(element);
+        element.setAttribute("background", Boolean.toString(background));
         if (action != null) {
             element.setAttribute("action", action);
         }
@@ -31,6 +41,7 @@ public class SbtBeforeRunTask extends BeforeRunTask {
     public void readExternal(Element element) {
         super.readExternal(element);
         action = element.getAttributeValue("action");
+        background = "true".equals(element.getAttributeValue("background"));
     }
 
     public boolean equals(Object o) {
@@ -49,6 +60,7 @@ public class SbtBeforeRunTask extends BeforeRunTask {
         if (action != null ? !action.equals(that.action) : that.action != null) {
             return false;
         }
+        if (background != that.background) return false;
         return true;
     }
 

@@ -19,20 +19,27 @@ import java.util.regex.Pattern;
  */
 public class StatusReader implements Runnable {
 
-    public static final String SUCCESS = "[success] Successful.";
-    public static final Pattern FINISHED = Pattern.compile("\\[info\\] Total time: .*, completed .*");
-    public static final String WAITING = "Waiting for source changes... (press enter to interrupt)";
 
-    private Pattern errorPattern;
+    public static final Pattern compile = Pattern.compile("\\[info\\] Compiling .* sources...");
+    public static final Pattern wait_change = Pattern.compile(".* Waiting for source changes\\.\\.\\. \\(press enter to interrupt\\)");
+    /* a little hacky: the '> ' message of input does not end with line break, so should use
+       another method than readLine if we want to read it, but i was too lazy. so i use this final message
+       but it's also printed just before wait_change, which is corrected in the next line.
+     */
+    public static final Pattern wait_input = Pattern.compile("\\[info\\] Total time: .* s, completed .*");
+    public static final Pattern final_success = Pattern.compile("\\[success\\] Successful\\.");
+    public static final Pattern final_error = Pattern.compile("\\[error\\] Error running .*: Compilation failed");
+    public final Pattern error;
+
     private BufferedReader output;
-    private Status status = StatusReader.Status.working;
+    private Status status = StatusReader.Status.wait_input;
     private StatusOfCompile current;
     private StatusOfCompile previous;
     private StatusListener listener;
 
     public StatusReader(Reader output, String projectDir) {
         this.output = new BufferedReader(output);
-        errorPattern = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
+        error = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
         current = new StatusOfCompile();
         previous = new StatusOfCompile();
     }
@@ -40,46 +47,44 @@ public class StatusReader implements Runnable {
     public void close() {
         try { output.close(); } catch (Exception e) { }
     }
+
+    /**
+     * problem here: set project doesn't show the wait_input message, so we never stop status.working
+     * are there other commands like that? find them and see what to do
+     * the proper solution would be to not use bufferedReader so we would be able to read prompt before command entered
+     */
     public void run() {
         try { while (true) {
             String line = output.readLine();
-            // this may occur between finish & waiting messages
-            if (line == null)
-                throw new EOFException();
-            if (!line.equals("[info] "))
-                status = StatusReader.Status.working;
-            if (SUCCESS.equals(line))
-                current.setSuccess(true);
-            else if (FINISHED.matcher(line).matches())
-                finished(StatusReader.Status.finished);
-            else if (line.endsWith(WAITING))
-                finished(StatusReader.Status.finished);
-            else try {
-                current.addErrorInSource(new StatusError(errorPattern, line, output));
-            } catch (IllegalArgumentException e) { }
-            synchronized (this) { notify(); }
-        } } catch (IOException ioe) {
+        synchronized (this) {
+            if (line == null) throw new EOFException();
+            else if (wait_change.matcher(line).matches()) finished(Status.wait_change); // see this.wait_input
+            else if (wait_input.matcher(line).matches()) this.status = Status.wait_input;
+            else if (final_success.matcher(line).matches()) current.setSuccess(true);
+            else if (final_error.matcher(line).matches()) current.setSuccess(false);
+            else if (error.matcher(line).matches()) current.addErrorInSource(new StatusError(error, line, output));
+            else this.status = StatusReader.Status.working;
+        } } } catch (IOException ioe) {
             finished(StatusReader.Status.closed);
         }
     }
 
-    public Status waitIfWorking() {
-        do synchronized (this) {
-            try { wait(300); } catch (InterruptedException e) { e.printStackTrace(); }
-        }  while (status == Status.working);
+    public synchronized Status waitForWorking() {
+        // wait 1/3 seconds, maybe sbt will discover changes and will begin working - sbt waits 1 sec. for checking changes
+        try { wait(333); } catch (InterruptedException e) {}
+        while (status == Status.working) try {
+            wait(); } catch (InterruptedException e) {}
         return status;
     }
     public StatusOfCompile getCompileStatus() {
         return previous;
     }
-    private synchronized void finished(Status status) {
+    private void finished(Status status) {
         this.status = status;
-        if (current.isSuccess() || current.getErrors().size() > 0) {
-            previous = current;
-            current = new StatusOfCompile();
-        }
         if (listener != null)
-            listener.update(previous);
+            listener.update(current);
+        previous = current;
+        current = new StatusOfCompile();
         notify();
     }
 
@@ -98,8 +103,6 @@ public class StatusReader implements Runnable {
     }
 
     public enum Status {
-        working,
-        finished,
-        closed,
+        working, closed, wait_change, wait_input,
     }
 }

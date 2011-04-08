@@ -12,10 +12,7 @@ import javax.swing.*;
 
 public class SelectSbtActionDialog extends DialogWrapper {
 
-    public static final String WAIT_BACKGROUND = "(wait for ~)";
-
     private static final String[] SBT_ACTIONS = new String[]{
-            WAIT_BACKGROUND,
             "clean",
             "clean-cache",
             "clean-lib",
@@ -46,16 +43,21 @@ public class SelectSbtActionDialog extends DialogWrapper {
     };
 
     private String selectedAction;
+    private boolean background;
     private JComboBox actionField;
+    private JCheckBox backgroundField;
 
-    public SelectSbtActionDialog(Project project, String selectedAction) {
+    public SelectSbtActionDialog(Project project, String selectedAction, boolean background) {
         super(project, false);
+        this.background = background;
         this.selectedAction = selectedAction;
-
         setTitle(MessageBundle.message("sbt.tasks.select.action.title"));
         init();
     }
 
+    public boolean isSelectedBackground() {
+        return background;
+    }
     public String getSelectedAction() {
         return selectedAction;
     }
@@ -64,15 +66,17 @@ public class SelectSbtActionDialog extends DialogWrapper {
         actionField = new JComboBox(SBT_ACTIONS);
         actionField.setEditable(true);
         actionField.setSelectedItem(selectedAction);
-
+        backgroundField = new JCheckBox(MessageBundle.message("sbt.tasks.select.action.background"), background);
         JPanel root = new JPanel(new MigLayout());
         root.add(actionField, "width 200::");
+        root.add(backgroundField, "width 200::");
         return root;
     }
 
     protected void doOKAction() {
         super.doOKAction();
         this.selectedAction = nullIfEmpty((String) actionField.getSelectedItem());
+        this.background = backgroundField.isSelected();
     }
 
     private static String nullIfEmpty(String s) {

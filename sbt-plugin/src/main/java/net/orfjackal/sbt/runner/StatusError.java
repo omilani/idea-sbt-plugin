@@ -22,6 +22,8 @@ import java.util.regex.*;
  */
 public class StatusError {
 
+    public static final Pattern last_line = Pattern.compile("\\[.*\\] *\\^ *");
+
     private boolean warning;
     private String file, message;
     private List<String> info = new ArrayList<String>();
@@ -34,12 +36,14 @@ public class StatusError {
            throw new IllegalArgumentException("not a valid SBT compile error line: " + line);
         file = match.group(1);
         message = match.group(3);
-        // sbt output no starts from 1
+        // sbt line number starts from 1
         lineNo = Integer.parseInt(match.group(2)) - 1;
         for (int i = 0; i < 5; i++) try {
             line = reader.readLine();
+            // this shouldn't happen but anyway
             if (!line.startsWith(getBeginning())) return;
             info.add(line.substring(getBeginning().length()));
+            if (last_line.matcher(line).matches()) return;
         } catch (Exception e) { return; }
     }
 

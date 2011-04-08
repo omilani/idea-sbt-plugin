@@ -28,7 +28,7 @@
     <ConfigurationWrapper RunnerId="Run" />
     <method>
       <option name="Make" enabled="false" />
-      <option name="SBT.BeforeRunTask" enabled="true" action="(wait for ~)" />
+      <option name="SBT.BeforeRunTask" enabled="true" background="false" action="(wait for ~)" />
     </method>
   </configuration>
 </component>
