@@ -34,7 +34,7 @@ public class StatusError {
         message = match.group(3);
         // sbt line number starts from 1
         lineNo = Integer.parseInt(match.group(2)) - 1;
-        for (int i = 0; i < 5; i++) try {
+        while (true) try {
             line = reader.readLine();
             // this shouldn't happen but anyway
             if (!line.startsWith(getBeginning())) return;
