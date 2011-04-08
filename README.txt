@@ -1,9 +1,15 @@
 changes made to original plugin:
-added a compiler tab to tool window, which gathers all compile errors each in one line
-added a (wait for ~) option for before run, which waits for background working to finish
-  (i run ~test-compile in sbt console, to get files compiled in background like eclipse.
-  (this way running files immediately after change resulted in unchanged file running)
-added a show compiler error to settings, which if enabled, after compile finishes with error shows compiler tab
+
+added a 'run in background' option for before run tasks, which runs them with sbt ~
+  so changes are compiled immediately, not with the first run, makes things faster
+  executing a run will wait till sbt process finishes
+before run task detects compile errors and stops running if there was any
+a hint in status bar is shown of status of sbt (working, stopped, successful, failed)
+added a compile tab to sbt view, which gathers and shows errors of last compile
+  so one doesn't have to scroll in console to find errors, especially in bigger projects
+  compile tab is focused automatically on errors (see settings)
+entering multiple sbt commands after each other into console made idea unresponsive, solved it
+
 by omid
 
 original readme:
