@@ -16,10 +16,7 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.*;
 import com.intellij.openapi.wm.*;
 import com.intellij.ui.content.*;
-import net.orfjackal.sbt.runner.StatusError;
-import net.orfjackal.sbt.runner.StatusListener;
-import net.orfjackal.sbt.runner.StatusOfCompile;
-import net.orfjackal.sbt.runner.StatusReader;
+import net.orfjackal.sbt.runner.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -181,9 +178,12 @@ public class SbtConsole {
         }
     }
 
-    public void attachToCompile(StatusReader status, final boolean focusOnError) {
-        status.setStatusListener(new StatusListener() {
-            public synchronized void update(StatusOfCompile status) {
+    public void attachToCompile(final boolean focusOnError) {
+        runnerComponent.addStatusListener(new StatusListener() {
+            public void status(Status status) {
+                compileView.print("Status: " + status + "\n", ConsoleViewContentType.SYSTEM_OUTPUT);
+            }
+            public synchronized void compile(StatusOfCompile status) {
                 compileView.clear();
                 if (status.isSuccess())
                     compileView.print("Compile Successful\n", ConsoleViewContentType.NORMAL_OUTPUT);

@@ -5,6 +5,7 @@
 package net.orfjackal.sbt.runner;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class SbtRunnerTester {
@@ -16,7 +17,7 @@ public class SbtRunnerTester {
     private static SbtRunner sbt;
 
     public static void main(String[] args) throws Exception {
-        sbt = new SbtRunner(WORKING_DIR, LAUNCHER_JAR, VM_PARAMS);
+        sbt = new SbtRunner(WORKING_DIR, LAUNCHER_JAR, VM_PARAMS, new ArrayList<StatusListener>());
         OutputReader output = sbt.subscribeToOutput();
         sbt.start();
 

@@ -28,6 +28,7 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
     private final SbtConsole console;
     private final SbtProjectSettingsComponent projectSettings;
     private final SbtApplicationSettingsComponent applicationSettings;
+    private List<StatusListener> listeners = new ArrayList<StatusListener>();
 
     public static SbtRunnerComponent getInstance(Project project) {
         return project.getComponent(SbtRunnerComponent.class);
@@ -124,7 +125,7 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
 
     public final void startIfNotStarted() throws IOException {
         if (!isSbtAlive()) {
-            sbt = new SbtRunner(projectDir(), launcherJar(), vmParameters());
+            sbt = new SbtRunner(projectDir(), launcherJar(), vmParameters(), listeners);
             printToMessageWindow();
             if (DEBUG) {
                 printToLogFile();
@@ -155,7 +156,7 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
         // org.jetbrains.idea.maven.execution.MavenExecutor#myConsole
         SbtProcessHandler process = new SbtProcessHandler(this, sbt.subscribeToOutput());
         console.attachToProcess(process, this);
-        console.attachToCompile(sbt.getStatus(), projectSettings.getState().isFocusOnError());
+        console.attachToCompile(projectSettings.getState().isFocusOnError());
         process.startNotify();
     }
 
@@ -268,14 +269,22 @@ public class SbtRunnerComponent extends AbstractProjectComponent {
 
     public boolean waitForBackground(String action) throws IOException {
         startIfNotStarted();
-        if (sbt.getStatus().getStatus() == StatusReader.Status.wait_input)
+        if (sbt.getStatusReader().getStatus() == Status.wait_input)
             sbt.execute("~" + action);
-        sbt.getStatus().waitForWorking();
-        boolean success = sbt.getStatus().getCompileStatus().isSuccess();
+        sbt.getStatusReader().waitForWorking();
+        boolean success = sbt.getStatusReader().getCompileStatus().isSuccess();
         return success;
     }
 
     public StatusOfCompile getResult() {
-        return sbt.getStatus().getCompileStatus();
+        return sbt.getStatusReader().getCompileStatus();
+    }
+
+
+    public void addStatusListener(StatusListener listener) {
+        this.listeners.add(listener);
+    }
+    public void removeStatusListener(StatusListener listener) {
+        this.listeners.remove(listener);
     }
 }

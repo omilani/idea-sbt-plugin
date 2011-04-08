@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -32,16 +34,24 @@ public class StatusReader implements Runnable {
     public final Pattern error;
 
     private BufferedReader output;
-    private Status status = StatusReader.Status.wait_input;
+    private Status status = Status.wait_input;
     private StatusOfCompile current;
     private StatusOfCompile previous;
-    private StatusListener listener;
+    private List<StatusListener> listeners = new ArrayList<StatusListener>();
 
-    public StatusReader(Reader output, String projectDir) {
+    public StatusReader(Reader output, String projectDir, List<StatusListener> listeners) {
         this.output = new BufferedReader(output);
         error = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
         current = new StatusOfCompile();
         previous = new StatusOfCompile();
+        this.listeners = listeners;
+    }
+
+    public void setStatus(Status status) {
+        if (this.status == status) return;
+        for (StatusListener listener: listeners)
+            listener.status(status);
+        this.status = status;
     }
 
     public void close() {
@@ -49,7 +59,7 @@ public class StatusReader implements Runnable {
     }
 
     /**
-     * problem here: set project doesn't show the wait_input message, so we never stop status.working
+     * TODO: problem here: set project doesn't show the wait_input message, so we never stop status.working
      * are there other commands like that? find them and see what to do
      * the proper solution would be to not use bufferedReader so we would be able to read prompt before command entered
      */
@@ -59,13 +69,13 @@ public class StatusReader implements Runnable {
         synchronized (this) {
             if (line == null) throw new EOFException();
             else if (wait_change.matcher(line).matches()) finished(Status.wait_change); // see this.wait_input
-            else if (wait_input.matcher(line).matches()) this.status = Status.wait_input;
+            else if (wait_input.matcher(line).matches()) setStatus(Status.wait_input);
             else if (final_success.matcher(line).matches()) current.setSuccess(true);
             else if (final_error.matcher(line).matches()) current.setSuccess(false);
             else if (error.matcher(line).matches()) current.addErrorInSource(new StatusError(error, line, output));
-            else this.status = StatusReader.Status.working;
+            else setStatus(Status.working);
         } } } catch (IOException ioe) {
-            finished(StatusReader.Status.closed);
+            finished(Status.closed);
         }
     }
 
@@ -80,9 +90,9 @@ public class StatusReader implements Runnable {
         return previous;
     }
     private void finished(Status status) {
-        this.status = status;
-        if (listener != null)
-            listener.update(current);
+        setStatus(status);
+        for (StatusListener listener : listeners)
+            listener.compile(current);
         previous = current;
         current = new StatusOfCompile();
         notify();
@@ -92,9 +102,6 @@ public class StatusReader implements Runnable {
         return status;
     }
 
-    public void setStatusListener(StatusListener listener) {
-        this.listener = listener;
-    }
 
     public void start() {
         Thread thread = new Thread(this);
@@ -102,7 +109,5 @@ public class StatusReader implements Runnable {
         thread.start();
     }
 
-    public enum Status {
-        working, closed, wait_change, wait_input,
-    }
+
 }

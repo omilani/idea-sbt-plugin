@@ -22,7 +22,7 @@ import java.util.regex.*;
  */
 public class StatusError {
 
-    public static final Pattern last_line = Pattern.compile("\\[.*\\] *\\^ *");
+    public static final Pattern last_line = Pattern.compile("\\[.*\\][\t ]*\\^");
 
     private boolean warning;
     private String file, message;

@@ -16,10 +16,11 @@ public class SbtRunner {
     private static final String PROMPT_AFTER_EMPTY_ACTION = "> ";
     private static final Logger LOG = Logger.getInstance("#orfjackal.sbt.runner.SbtRunner");
 
+    private List<StatusListener> listeners;
     private final ProcessRunner sbt;
     private StatusReader status;
 
-    public SbtRunner(File workingDir, File launcherJar, String[] vmParameters) {
+    public SbtRunner(File workingDir, File launcherJar, String[] vmParameters, List<StatusListener> listeners) {
         if (!workingDir.isDirectory()) {
             throw new IllegalArgumentException("Working directory does not exist: " + workingDir);
         }
@@ -27,7 +28,8 @@ public class SbtRunner {
             throw new IllegalArgumentException("Launcher JAR file does not exist: " + launcherJar);
         }
         sbt = new ProcessRunner(workingDir, getCommand(launcherJar, vmParameters));
-        status = new StatusReader(sbt.subscribeToOutput(), workingDir.getAbsolutePath());
+        status = new StatusReader(sbt.subscribeToOutput(), workingDir.getAbsolutePath(), listeners);
+        this.listeners = listeners;
     }
 
     private static String[] getCommand(File launcherJar, String[] vmParameters) {
@@ -83,7 +85,9 @@ public class SbtRunner {
         output.close();
     }
 
-    public StatusReader getStatus() {
+    public StatusReader getStatusReader() {
         return status;
     }
+
+
 }

@@ -4,6 +4,11 @@
 
 package net.orfjackal.sbt.runner;
 
+/**
+ * compile is called exactly after status when result is available
+ * status is called only if it has changed
+ */
 public interface StatusListener {
-    public void update(StatusOfCompile status);
+    public void status(Status status);
+    public void compile(StatusOfCompile status);
 }

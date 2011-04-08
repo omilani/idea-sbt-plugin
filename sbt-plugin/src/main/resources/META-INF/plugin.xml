@@ -53,6 +53,9 @@
         <component>
             <implementation-class>net.orfjackal.sbt.plugin.settings.SbtProjectSettingsComponent</implementation-class>
         </component>
+        <component>
+            <implementation-class>net.orfjackal.sbt.plugin.SbtStatusWidget</implementation-class>
+        </component>
     </project-components>
 
     <application-components>

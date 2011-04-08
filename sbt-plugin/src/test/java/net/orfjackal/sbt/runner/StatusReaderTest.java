@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.PipedReader;
 import java.io.PipedWriter;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
@@ -27,7 +28,7 @@ public class StatusReaderTest {
         PipedWriter writer = new PipedWriter();
         String projectDir = "D:\\work\\workspace-0.9\\smp-parent";
         Pattern errorPattern = Pattern.compile("\\[error\\] (" + projectDir.replace("\\", "\\\\") + "[^:]*):([^:]*): (.*)");
-        StatusReader status = new StatusReader(new PipedReader(writer), "D:\\work\\workspace-0.9\\smp-parent");
+        StatusReader status = new StatusReader(new PipedReader(writer), "D:\\work\\workspace-0.9\\smp-parent", new ArrayList<StatusListener>());
         String str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.";
         assertTrue(status.error.matcher(str).matches());
         StatusError error = new StatusError(errorPattern, str, null);
@@ -38,7 +39,7 @@ public class StatusReaderTest {
         str = "[error] D:\\work\\workspace-0.9\\smp-parent\\smp-wicket\\src\\main\\java\\ir\\smp\\addon\\wicket\\StateList.java:33: warning: non-varargs call of varargs method with inexact argument type for last parameter;";
         error = new StatusError(errorPattern, str, null);
         assertTrue(error.isWarning());
-        assertTrue(StatusError.last_line.matcher("[error]   ^").matches());
+        assertTrue(StatusError.last_line.matcher("[error] \t       ^").matches());
 
 
         status.start();
@@ -48,12 +49,12 @@ public class StatusReaderTest {
         writer.write("4. Waiting for source changes... (press enter to interrupt)\n");
         try { Thread.sleep(1000); } catch (InterruptedException e) { }
         status.waitForWorking();
-        assertEquals(StatusReader.Status.wait_change, status.getStatus());
+        assertEquals(Status.wait_change, status.getStatus());
         writer.write("some working\n");
         writer.write("some more working\n");
         writer.write("still more working\n");
         try { Thread.sleep(1000); } catch (InterruptedException e) { }
-        assertEquals(StatusReader.Status.working, status.getStatus());
+        assertEquals(Status.working, status.getStatus());
         writer.write("[info] Compiling test sources...\n");
         writer.write("[error] D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala:53: ')' expected but '}' found.\n");
         writer.write("[error]   }\n");
@@ -62,7 +63,7 @@ public class StatusReaderTest {
         writer.write("[info] == smp-chat / test-compile ==\n");
         writer.write("5. Waiting for source changes... (press enter to interrupt)\n");
         status.waitForWorking();
-        assertEquals(StatusReader.Status.wait_change, status.getStatus());
+        assertEquals(Status.wait_change, status.getStatus());
         assertFalse(status.getCompileStatus().isSuccess());
         assertFalse(status.getCompileStatus().getErrors().get(0).isWarning());
         assertEquals("D:\\work\\workspace-0.9\\smp-parent\\smp-chat\\src\\test\\java\\ir\\smp\\chat\\x\\OpenfireTest.scala", status.getCompileStatus().getErrors().get(0).getFile());
@@ -80,7 +81,7 @@ public class StatusReaderTest {
         writer.write("5. Waiting for source changes... (press enter to interrupt)\n");
         try { Thread.sleep(1500); } catch (InterruptedException e) { }
         status.waitForWorking();
-        assertEquals(StatusReader.Status.wait_change, status.getStatus());
+        assertEquals(Status.wait_change, status.getStatus());
         assertEquals(1, status.getCompileStatus().getErrors().size());
         assertTrue(status.getCompileStatus().getErrors().get(0).isWarning());
         assertTrue(status.getCompileStatus().isSuccess());
